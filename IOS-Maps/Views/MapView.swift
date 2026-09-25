@@ -19,6 +19,9 @@ struct MapView: View {
                     .tint(.blue)
             }
         }
+        .mapControls {
+            MapUserLocationButton()
+        }
         .ignoresSafeArea()
         .onAppear {
             viewModel.requestLocationAccessAndStartUpdates()
