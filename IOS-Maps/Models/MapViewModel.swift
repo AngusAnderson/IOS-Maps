@@ -6,6 +6,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 
     @Published private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
     @Published var userLocation: CLLocationCoordinate2D?
+    @Published var userHeading: Double?  // in degrees, 0–360
 
     private let locationManager = CLLocationManager()
 
@@ -13,6 +14,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.headingFilter = kCLHeadingFilterNone
     }
 
     func requestLocationAccessAndStartUpdates() {
@@ -21,6 +23,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
             locationManager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.startUpdatingLocation()
+            locationManager.startUpdatingHeading()
         case .restricted:
             print("Location access is restricted.")
         case .denied:
@@ -32,16 +35,12 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
-
         switch manager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             manager.startUpdatingLocation()
-        case .notDetermined:
+            manager.startUpdatingHeading()
+        case .notDetermined, .restricted, .denied:
             break
-        case .restricted:
-            print("Location access is restricted.")
-        case .denied:
-            print("Location access denied. Enable in Settings.")
         @unknown default:
             break
         }
@@ -51,6 +50,13 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         guard let location = locations.last else { return }
         DispatchQueue.main.async {
             self.userLocation = location.coordinate
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        DispatchQueue.main.async {
+            // trueHeading is relative to magnetic north; use magneticHeading if you prefer
+            self.userHeading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
         }
     }
 

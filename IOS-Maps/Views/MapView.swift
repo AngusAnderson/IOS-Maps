@@ -12,19 +12,41 @@ struct MapView: View {
         )
     )
 
+    @State private var tappedCoordinate: CLLocationCoordinate2D?
+
     var body: some View {
-        Map(position: $position) {
-            if let userLocation = viewModel.userLocation {
-                Marker("You are here", coordinate: userLocation)
-                    .tint(.blue)
+        ZStack {
+            Map(position: $position) {
+                if let userLocation = viewModel.userLocation {
+                    Marker("You are here", coordinate: userLocation)
+                        .tint(.blue)
+                }
+
+                if let tappedCoordinate = tappedCoordinate {
+                    Marker("Tapped", coordinate: tappedCoordinate)
+                        .tint(.red)
+                }
             }
-        }
-        .mapControls {
-            MapUserLocationButton()
-        }
-        .ignoresSafeArea()
-        .onAppear {
-            viewModel.requestLocationAccessAndStartUpdates()
+            .mapControls {
+                MapUserLocationButton()
+            }
+            .ignoresSafeArea()
+            .onAppear {
+                viewModel.requestLocationAccessAndStartUpdates()
+            }
+
+            MapReader { proxy in
+                Color.clear
+                    .contentShape(Rectangle())
+                    .allowsHitTesting(true)
+                    .onTapGesture { point in
+                        if let coordinate = proxy.convert(point, from: .local) {
+                            tappedCoordinate = coordinate
+                            print("Tapped at:", coordinate.latitude, coordinate.longitude)
+                        }
+                    }
+            }
+            .allowsHitTesting(false)
         }
     }
 }
