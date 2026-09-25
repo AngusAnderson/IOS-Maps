@@ -1,17 +1,11 @@
 import SwiftUI
-import Playgrounds
+import MapKit
 
 struct ContentView: View {
+
+    @State private var region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 55.951238, longitude: -4.043388), span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1))
+
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        Map(initialPosition: .region(region))
     }
-}
-
-#Preview {
-    ContentView()
-}
-
-#Playground {
-    _ = 1 + 2
 }
